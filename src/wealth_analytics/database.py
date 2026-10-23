@@ -60,6 +60,11 @@ class Database:
     def __init__(self, config: DatabaseConfig) -> None:
         self._config = config
 
+    @property
+    def name(self) -> str:
+        """The MySQL database name, e.g. wealth_analytics."""
+        return self._config.database
+
     @contextmanager
     def connect(self) -> Iterator[MySQLConnectionAbstract]:
         """A connection to this database, closed automatically afterwards."""

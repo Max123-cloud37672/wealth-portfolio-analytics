@@ -1,0 +1,12 @@
+# Streamlit settings for the dashboard (read automatically by "streamlit run").
+
+[theme]
+# Blue accent instead of the default red, which reads as "loss" in finance.
+primaryColor = "#2a78d6"
+
+[client]
+# Hide the developer toolbar (e.g. the "Deploy" button) from viewers.
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
