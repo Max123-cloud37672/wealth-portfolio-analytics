@@ -7,7 +7,9 @@ import pytest
 
 from wealth_analytics.client import RiskProfile
 from wealth_analytics.database import Database
+from wealth_analytics.performance import Performance
 from wealth_analytics.portfolio import Portfolio
+from wealth_analytics.price_history import PriceHistory
 from wealth_analytics.repositories import (
     ClientRepository,
     PriceRepository,
@@ -99,6 +101,27 @@ def test_every_trade_happened_at_that_days_closing_price() -> None:
 
     for _, trade in read_transactions(DATA_DIR / "transactions.csv"):
         assert closes[(trade.ticker, trade.trade_date)] == trade.price, trade
+
+
+def test_performance_and_portfolio_agree_on_each_clients_gain() -> None:
+    # Two independent calculations: total gain from the daily replay must equal
+    # gains locked in by sales plus paper gains on what is still held.
+    closes: dict[str, dict[date, float]] = {}
+    for ticker, day, close in read_prices(DATA_DIR / "prices.csv"):
+        closes.setdefault(ticker, {})[day] = close
+    prices = PriceHistory(closes)
+    trades = read_transactions(DATA_DIR / "transactions.csv")
+
+    for client in {client for client, _ in trades}:
+        own_trades = [trade for name, trade in trades if name == client]
+        last = Performance(own_trades, prices).daily_values[-1]
+        portfolio = Portfolio(own_trades)
+        unrealized = sum(
+            position.quantity * prices.close_on(ticker, last.day) - position.cost_basis
+            for ticker, position in portfolio.positions.items()
+        )
+
+        assert last.total_gain == pytest.approx(portfolio.realized_gain + unrealized)
 
 
 # --- Loading into MySQL -----------------------------------------------------

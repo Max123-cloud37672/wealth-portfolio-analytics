@@ -103,3 +103,21 @@ def test_saved_prices_load_back_by_ticker(database: Database) -> None:
 def test_a_price_for_an_unknown_ticker_is_rejected(database: Database) -> None:
     with pytest.raises(ValueError):
         PriceRepository(database).add_many([("ZZZ", date(2026, 3, 2), 10.00)])
+
+
+def test_all_prices_load_as_a_price_history(database: Database) -> None:
+    securities = SecurityRepository(database)
+    securities.add(
+        Security("RY", "Royal Bank of Canada", AssetType.STOCK, "Financials")
+    )
+    securities.add(
+        Security("XIU", "iShares S&P/TSX 60", AssetType.ETF, "Canadian Equity")
+    )
+    PriceRepository(database).add_many(
+        [("RY", date(2026, 3, 2), 150.25), ("XIU", date(2026, 3, 3), 40.10)]
+    )
+
+    history = PriceRepository(database).history()
+
+    assert history.close_on("RY", date(2026, 3, 2)) == 150.25
+    assert history.trading_days() == [date(2026, 3, 2), date(2026, 3, 3)]

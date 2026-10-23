@@ -15,6 +15,7 @@ from mysql.connector import errorcode
 
 from wealth_analytics.client import Client, RiskProfile
 from wealth_analytics.database import Database
+from wealth_analytics.price_history import PriceHistory
 from wealth_analytics.security import AssetType, Security
 from wealth_analytics.transaction import Side, Transaction
 
@@ -165,3 +166,13 @@ class PriceRepository:
                 (ticker,),
             )
             return {price_date: float(close) for price_date, close in cursor.fetchall()}
+
+    def history(self) -> PriceHistory:
+        """Every saved price, ready for lookups by ticker and day."""
+        with self._database.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT ticker, price_date, close FROM prices")
+            closes: dict[str, dict[date, float]] = {}
+            for ticker, price_date, close in cursor.fetchall():
+                closes.setdefault(ticker, {})[price_date] = float(close)
+            return PriceHistory(closes)
