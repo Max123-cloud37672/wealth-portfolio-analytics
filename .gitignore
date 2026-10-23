@@ -1,0 +1,23 @@
+# Virtual environment (rebuilt from requirements.txt)
+.venv/
+
+# Database login details: private, never uploaded (see .env.example)
+.env
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Package build information (created by "pip install -e .")
+*.egg-info/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# AI coding-assistant files added by tools on this machine (not part of the project)
+.agents/
+.claude/
+
+# macOS
+.DS_Store

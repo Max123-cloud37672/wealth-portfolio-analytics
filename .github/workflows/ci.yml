@@ -1,0 +1,31 @@
+# Continuous Integration: on every pull request (and every update to main),
+# GitHub starts a fresh machine, installs the project and runs the checks.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check code style with Ruff
+        run: ruff check .
+
+      - name: Run tests with pytest
+        run: pytest
