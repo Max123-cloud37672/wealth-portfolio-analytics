@@ -1,16 +1,22 @@
-"""Saving clients and trades to MySQL and loading them back as Python objects.
+"""Saving the project's data to MySQL and loading it back as Python objects.
 
 These classes are the only place that writes SQL, so the rest of the project
-works with Client and Transaction objects and never needs to know about tables.
+works with Client, Transaction and Security objects and never needs to know
+about tables.
 Values are always passed as %s parameters, never pasted into the SQL text,
 which protects against SQL injection.
 """
+
+from collections.abc import Iterable
+from datetime import date
 
 import mysql.connector
 from mysql.connector import errorcode
 
 from wealth_analytics.client import Client, RiskProfile
 from wealth_analytics.database import Database
+from wealth_analytics.price_history import PriceHistory
+from wealth_analytics.security import AssetType, Security
 from wealth_analytics.transaction import Side, Transaction
 
 
@@ -90,3 +96,83 @@ class TransactionRepository:
                 )
                 for trade_date, ticker, side, quantity, price in cursor.fetchall()
             ]
+
+
+class SecurityRepository:
+    """Reads and writes rows in the securities table."""
+
+    def __init__(self, database: Database) -> None:
+        self._database = database
+
+    def add(self, security: Security) -> None:
+        """Save one security's reference details."""
+        with self._database.connect() as connection:
+            connection.cursor().execute(
+                "INSERT INTO securities (ticker, name, asset_type, sector) "
+                "VALUES (%s, %s, %s, %s)",
+                (
+                    security.ticker,
+                    security.name,
+                    security.asset_type.value,
+                    security.sector,
+                ),
+            )
+            connection.commit()
+
+    def all(self) -> list[Security]:
+        """Every security, in ticker order."""
+        with self._database.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT ticker, name, asset_type, sector FROM securities "
+                "ORDER BY ticker"
+            )
+            return [
+                Security(ticker, name, AssetType(asset_type), sector)
+                for ticker, name, asset_type, sector in cursor.fetchall()
+            ]
+
+
+class PriceRepository:
+    """Reads and writes rows in the prices table (one closing price per day)."""
+
+    def __init__(self, database: Database) -> None:
+        self._database = database
+
+    def add_many(self, prices: Iterable[tuple[str, date, float]]) -> None:
+        """Save (ticker, date, close) rows in one go. Each ticker must be a security."""
+        with self._database.connect() as connection:
+            try:
+                connection.cursor().executemany(
+                    "INSERT INTO prices (ticker, price_date, close) "
+                    "VALUES (%s, %s, %s)",
+                    list(prices),
+                )
+            except mysql.connector.IntegrityError as error:
+                if error.errno == errorcode.ER_NO_REFERENCED_ROW_2:
+                    raise ValueError(
+                        "Prices can only be saved for tickers in the securities table"
+                    ) from None
+                raise
+            connection.commit()
+
+    def closes(self, ticker: str) -> dict[date, float]:
+        """The ticker's closing price on each day, oldest first."""
+        with self._database.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT price_date, close FROM prices WHERE ticker = %s "
+                "ORDER BY price_date",
+                (ticker,),
+            )
+            return {price_date: float(close) for price_date, close in cursor.fetchall()}
+
+    def history(self) -> PriceHistory:
+        """Every saved price, ready for lookups by ticker and day."""
+        with self._database.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT ticker, price_date, close FROM prices")
+            closes: dict[str, dict[date, float]] = {}
+            for ticker, price_date, close in cursor.fetchall():
+                closes.setdefault(ticker, {})[price_date] = float(close)
+            return PriceHistory(closes)

@@ -1,0 +1,20 @@
+ticker,name,asset_type,sector
+AEM,Agnico Eagle Mines,Stock,Materials
+ATD,Alimentation Couche-Tard,Stock,Consumer Staples
+BCE,BCE Inc.,Stock,Communication Services
+BN,Brookfield Corporation,Stock,Financials
+BNS,Bank of Nova Scotia,Stock,Financials
+CNR,Canadian National Railway,Stock,Industrials
+CSU,Constellation Software,Stock,Information Technology
+ENB,Enbridge,Stock,Energy
+FTS,Fortis,Stock,Utilities
+L,Loblaw Companies,Stock,Consumer Staples
+NA,National Bank of Canada,Stock,Financials
+RY,Royal Bank of Canada,Stock,Financials
+SHOP,Shopify,Stock,Information Technology
+SLF,Sun Life Financial,Stock,Financials
+TD,Toronto-Dominion Bank,Stock,Financials
+VFV,Vanguard S&P 500 Index ETF,ETF,US Equity (ETF)
+XBB,iShares Core Canadian Universe Bond ETF,ETF,Fixed Income (ETF)
+XIU,iShares S&P/TSX 60 Index ETF,ETF,Canadian Equity (ETF)
+ZDV,BMO Canadian Dividend ETF,ETF,Canadian Dividend (ETF)
