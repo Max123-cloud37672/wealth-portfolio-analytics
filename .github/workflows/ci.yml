@@ -11,6 +11,29 @@ jobs:
   checks:
     runs-on: ubuntu-latest
 
+    # A throwaway MySQL server for the database tests, matching the local version.
+    # The password is only for this temporary CI machine, not a real secret.
+    services:
+      mysql:
+        image: mysql:9.7.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ci-only-password
+      MYSQL_DATABASE: wealth_analytics
+      MYSQL_TEST_DATABASE: wealth_analytics_test
+
     steps:
       - name: Check out the code
         uses: actions/checkout@v7
@@ -28,4 +51,4 @@ jobs:
         run: ruff check .
 
       - name: Run tests with pytest
-        run: pytest
+        run: pytest -rs
