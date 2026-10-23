@@ -85,6 +85,14 @@ class Database:
                 cursor.execute(statement)
             connection.commit()
 
+    def delete_all_rows(self) -> None:
+        """Empty every table (trades first, as they refer to clients)."""
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM transactions")
+            cursor.execute("DELETE FROM clients")
+            connection.commit()
+
     def _open(self, database: str | None) -> MySQLConnectionAbstract:
         return mysql.connector.connect(
             host=self._config.host,

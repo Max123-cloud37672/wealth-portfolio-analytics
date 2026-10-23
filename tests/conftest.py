@@ -32,9 +32,5 @@ def test_database() -> Database:
 @pytest.fixture
 def database(test_database: Database) -> Iterator[Database]:
     """The test database with every table emptied, so each test starts clean."""
-    with test_database.connect() as connection:
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM transactions")
-        cursor.execute("DELETE FROM clients")
-        connection.commit()
+    test_database.delete_all_rows()
     yield test_database
