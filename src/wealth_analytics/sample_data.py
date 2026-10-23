@@ -1,4 +1,4 @@
-"""Loading the fictional sample clients and trades from data/*.csv into MySQL.
+"""Loading the fictional sample data from data/*.csv into MySQL.
 
 Run from the project folder:  python -m wealth_analytics.sample_data [--reset]
 """
@@ -10,7 +10,13 @@ from pathlib import Path
 
 from wealth_analytics.client import RiskProfile
 from wealth_analytics.database import Database, DatabaseConfig
-from wealth_analytics.repositories import ClientRepository, TransactionRepository
+from wealth_analytics.repositories import (
+    ClientRepository,
+    PriceRepository,
+    SecurityRepository,
+    TransactionRepository,
+)
+from wealth_analytics.security import AssetType, Security
 from wealth_analytics.transaction import Side, Transaction
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -40,10 +46,33 @@ def read_transactions(path: Path) -> list[tuple[str, Transaction]]:
         ]
 
 
+def read_securities(path: Path) -> list[Security]:
+    """Each security's reference details, in file order."""
+    with path.open(newline="") as file:
+        return [
+            Security(
+                ticker=row["ticker"],
+                name=row["name"],
+                asset_type=AssetType(row["asset_type"]),
+                sector=row["sector"],
+            )
+            for row in csv.DictReader(file)
+        ]
+
+
+def read_prices(path: Path) -> list[tuple[str, date, float]]:
+    """Each (ticker, date, closing price) row, in file order."""
+    with path.open(newline="") as file:
+        return [
+            (row["ticker"], date.fromisoformat(row["price_date"]), float(row["close"]))
+            for row in csv.DictReader(file)
+        ]
+
+
 def load_sample_data(
     database: Database, data_dir: Path = DATA_DIR, reset: bool = False
 ) -> None:
-    """Create the tables if needed and fill them with the sample clients and trades.
+    """Create the tables if needed and fill them with the sample data.
 
     Refuses to load on top of existing clients unless reset=True, which first
     deletes every existing row.
@@ -56,6 +85,11 @@ def load_sample_data(
         raise RuntimeError(
             "The database already has clients. Run again with --reset to replace them."
         )
+
+    securities = SecurityRepository(database)
+    for security in read_securities(data_dir / "securities.csv"):
+        securities.add(security)
+    PriceRepository(database).add_many(read_prices(data_dir / "prices.csv"))
 
     client_ids = {
         name: clients.add(name, risk).client_id
