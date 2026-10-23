@@ -1,0 +1,16 @@
+# Runtime: used by the analytics engine and the dashboard
+pandas==3.1.0
+numpy==2.5.4
+streamlit==1.66.1
+plotly==7.1.0
+
+# Database: talk to the local MySQL server, read login details from .env
+mysql-connector-python==26.10.0
+python-dotenv==1.2.4
+
+# This project's own package (src/wealth_analytics), installed in editable mode
+-e .
+
+# Development: testing and code-style checks
+pytest==9.1.1
+ruff==0.17.2

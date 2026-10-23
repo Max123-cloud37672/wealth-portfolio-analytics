@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wealth-analytics"
+version = "0.1.0"
+description = "Portfolio analytics for illustrative high-net-worth clients, backed by a local MySQL database (fictional data)."
+requires-python = ">=3.14"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
